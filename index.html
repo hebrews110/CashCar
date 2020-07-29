@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no"/>
-        <title>Banana Bonanza</title>
+        <title>Coin Craze</title>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.4.1/css/bootstrap-reboot.min.css"/>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css"/>
         <link href="https://fonts.googleapis.com/css?family=Lato&display=swap" rel="stylesheet"> 
@@ -17,10 +17,11 @@
                 <div id="game-container">
                     <canvas id="renderCanvas"></canvas>
                     <div id="bananas">
-                        <img class="banana" src="banana.svg"/>
+                        <img class="banana" src="coin.svg"/>
                         &times;<span class="num-banana">0</span>
                         <span class="debug"></span>
                     </div>
+                    <div class="correct-answer" style="display: none;">2 + 3 = 5</div>
                     <div class="ui-overlay">
                         <div class="timer">&nbsp;</div>
                         <div class="add-to"><span class="operation-name"></span> TO:<br/><span class="number-to-add"></span></div>
@@ -32,7 +33,7 @@
                         <h1>You Win!</h1>
                         <div class="dialog-image-left">
                             <img class="monkey" src="monkey_happy.svg"/>
-                            <p>You collected all the bananas in time!</p>
+                            <p>You collected all the coins in time!</p>
                         </div>
                         <center><button onclick="window.location.reload(false);">Play again</button></center>
                     </div>
@@ -48,15 +49,15 @@
                         <h1>Game Over</h1>
                         <div class="dialog-image-left">
                             <img class="monkey" src="monkey_sad.svg"/>
-                            <p>You didn't collect bananas fast enough for me!</p>
+                            <p>You didn't collect coins fast enough for me!</p>
                         </div>
                         <center><button onclick="window.location.reload(false);">Play again</button></center>
                     </div>
                     <div class="dialog" id="start-dialog">
-                        <h1>Banana Bonanza</h1>
+                        <h1>Coin Craze</h1>
                         <div class="dialog-image-left" style="display:none;">
                             <img class="monkey" src="monkey_happy.svg"/>
-                            <p>Welcome! Can you help me collect <span class="num-bananas"></span> bananas from the barrels on the road?<br/>Drive your car into the barrels that match the question which will appear in the top right.<br/>On a PC, use your arrow keys to control the car. On mobile, move your finger up and down to control the car's speed, and swipe left and right to switch lanes.<br/>Good luck!</p>
+                            <p>Welcome! Can you help me collect <span class="num-bananas"></span> coins from the barrels on the road?<br/>Drive your car into the barrels that match the question which will appear in the top right.<br/>On a PC, use your arrow keys to control the car. On mobile, move your finger up and down to control the car's speed, and swipe left and right to switch lanes.<br/>Good luck!</p>
                         </div>
                         <center><button disabled id="start-button" onclick="window.onstartdialogdone(event);">Loading...</button></center>
                     </div>

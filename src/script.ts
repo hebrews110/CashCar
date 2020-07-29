@@ -26,6 +26,8 @@ let gameTotalTime = 300;
 let gameStart = Date.now();
 
 let endDialogVisible = false;
+let forceStopCar = false;
+let forceMathObj: NumberSet = null;
 
 const keys: { [k: string]: boolean; } = { };
 
@@ -87,7 +89,7 @@ function shuffle<T>(a: Array<T>): Array<T> {
     return a;
 }
 
-type NumberSet = { firstNumber: number; secondNumber: number; correct: boolean; };
+type NumberSet = { firstNumber: number; secondNumber: number; correct: boolean; result: number; };
 
 var scenePromises = [];
 var totalNumber, operation;
@@ -175,7 +177,7 @@ var createScene = function() {
             secondNumber = tmp;
         }
         */
-        const obj = { firstNumber: firstFactor, correct, originalNumber: currentCorrectAnswer, otherNumber: trueNumber, secondNumber: secondFactor };
+        const obj = { firstNumber: firstFactor, correct, result: currentCorrectAnswer, originalNumber: currentCorrectAnswer, otherNumber: trueNumber, secondNumber: secondFactor };
 
         return obj;
     }
@@ -325,7 +327,8 @@ var createScene = function() {
 
                             var label = new GUI.TextBlock();
                             label.fontSize = 40;
-                            const { firstNumber, correct, secondNumber } = numberSets.pop();
+                            const obj = numberSets.pop();
+                            const { firstNumber, correct, secondNumber } = obj;
                             label.text = `${firstNumber}${operationSymbol[operation]}${secondNumber}`;
                             label.zIndex = TOTAL - i;
                             label.color = "White";
@@ -336,6 +339,7 @@ var createScene = function() {
                             label.isVisible = false;
                             barrels.push({ secondBarrel, label });
                             (secondBarrel as any).correct = correct;
+                            (secondBarrel as any).mathObj = { ...obj, symbol: operationSymbol[operation] };
                             secondBarrel.freezeWorldMatrix();
                         }
                     }
@@ -422,7 +426,7 @@ var createScene = function() {
         }
     });
 
-
+    var correctAnswer: HTMLElement = document.querySelector(".correct-answer");
     scene.registerBeforeRender(() => {
         if (rattling >0) {
             rattling--;
@@ -449,16 +453,32 @@ var createScene = function() {
         let tooFar = monkeyCar.position.z >= TILE_LENGTH;
         let endingGame = tooFar || numBananas >= GOAL_BANANAS;
 
-        if(endingGame) {
-            carSpeed -= 0.003 * frameDelta;
+        if(endingGame || forceStopCar) {
+            if(forceStopCar) {
+                correctAnswer.textContent = `${forceMathObj.firstNumber} ${(forceMathObj as any).symbol} ${forceMathObj.secondNumber} = ?`;
+                correctAnswer.style.display = "";
+            }
+            carSpeed -= (forceStopCar ? 0.006 : 0.003) * frameDelta;
             carSpeed = Math.max(0, carSpeed);
             if(carSpeed <= 0) {
-                if(tooFar)
-                    showFailureDialog("distance");
-                else if(numBananas >= GOAL_BANANAS)
-                    showWinDialog();
+                if(forceStopCar) {
+                    forceStopCar = false;
+                    setTimeout(() => {
+                        correctAnswer.textContent = `${forceMathObj.firstNumber} ${(forceMathObj as any).symbol} ${forceMathObj.secondNumber} = ${forceMathObj.result}, not ${totalNumber}`;
+                        setTimeout(() => {
+                            correctAnswer.style.display = "none";
+                            forceMathObj = null;
+                        }, 3000);
+                    }, 2000);
+                } else {
+                    if(tooFar)
+                        showFailureDialog("distance");
+                    else if(numBananas >= GOAL_BANANAS)
+                        showWinDialog();
+                }
+                
             }
-        } else {
+        } else if(forceMathObj == null) {
             if(keys.ArrowUp || keys.Up) {
                 carSpeed += 0.001 * frameDelta;
                 carSpeed = Math.min(0.8, carSpeed);
@@ -467,8 +487,8 @@ var createScene = function() {
                 carSpeed = Math.max(0.03, carSpeed);
             }
         }
-        engineSound.setPlaybackRate(1 + (carSpeed / 0.17));
-        if(!endingGame) {
+        engineSound.setPlaybackRate((!forceStopCar && forceMathObj != null) ? 0 : (1 + (carSpeed / 0.17)));
+        if(!endingGame && forceMathObj == null && !forceStopCar) {
             var ray = new BABYLON.Ray(monkeyCar.position.add(new BABYLON.Vector3(0, 0.5, 0)), new BABYLON.Vector3(0,0,1), 4);
 
 
@@ -494,6 +514,8 @@ var createScene = function() {
                         wrongSound.play();
                         numBananas = Math.max(0, numBananas - factor);
                         rattling = 33;
+                        forceMathObj = (barrel as any).mathObj;
+                        forceStopCar = true;
                     }
                     /*
                     var bananas = document.querySelector("#bananas");

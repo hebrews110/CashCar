@@ -5858,13 +5858,13 @@ if (true) {
 
 "use strict";
 /* unused harmony export __extends */
-/* unused harmony export __assign */
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return __assign; });
 /* unused harmony export __rest */
 /* unused harmony export __decorate */
 /* unused harmony export __param */
 /* unused harmony export __metadata */
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return __awaiter; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "b", function() { return __generator; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "b", function() { return __awaiter; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "c", function() { return __generator; });
 /* unused harmony export __createBinding */
 /* unused harmony export __exportStar */
 /* unused harmony export __values */
@@ -6169,6 +6169,8 @@ var desiredX = 0;
 var gameTotalTime = 300;
 var gameStart = Date.now();
 var endDialogVisible = false;
+var forceStopCar = false;
+var forceMathObj = null;
 var keys = {};
 function showFailureDialog(variant) {
     document.getElementById("failure-dialog-" + variant).style.display = "";
@@ -6305,7 +6307,7 @@ var createScene = function () {
             secondNumber = tmp;
         }
         */
-        var obj = { firstNumber: firstFactor, correct: correct, originalNumber: currentCorrectAnswer, otherNumber: trueNumber, secondNumber: secondFactor };
+        var obj = { firstNumber: firstFactor, correct: correct, result: currentCorrectAnswer, originalNumber: currentCorrectAnswer, otherNumber: trueNumber, secondNumber: secondFactor };
         return obj;
     }
     // Create the scene space
@@ -6428,8 +6430,9 @@ var createScene = function () {
                             secondBarrel.position.z = 8 + (i * DISTANCE);
                             secondBarrel.checkCollisions = false;
                             var label = new babylonjs_gui__WEBPACK_IMPORTED_MODULE_6__["TextBlock"]();
-                            label.fontSize = 50;
-                            var _a = numberSets.pop(), firstNumber = _a.firstNumber, correct = _a.correct, secondNumber = _a.secondNumber;
+                            label.fontSize = 40;
+                            var obj = numberSets.pop();
+                            var firstNumber = obj.firstNumber, correct = obj.correct, secondNumber = obj.secondNumber;
                             label.text = "" + firstNumber + operationSymbol[operation] + secondNumber;
                             label.zIndex = TOTAL - i;
                             label.color = "White";
@@ -6439,6 +6442,7 @@ var createScene = function () {
                             label.isVisible = false;
                             barrels.push({ secondBarrel: secondBarrel, label: label });
                             secondBarrel.correct = correct;
+                            secondBarrel.mathObj = Object(tslib__WEBPACK_IMPORTED_MODULE_0__[/* __assign */ "a"])(Object(tslib__WEBPACK_IMPORTED_MODULE_0__[/* __assign */ "a"])({}, obj), { symbol: operationSymbol[operation] });
                             secondBarrel.freezeWorldMatrix();
                         }
                     }
@@ -6517,6 +6521,7 @@ var createScene = function () {
             desiredX = Math.min(1, desiredX);
         }
     });
+    var correctAnswer = document.querySelector(".correct-answer");
     scene.registerBeforeRender(function () {
         if (rattling > 0) {
             rattling--;
@@ -6541,17 +6546,33 @@ var createScene = function () {
         var moveVector = new babylonjs__WEBPACK_IMPORTED_MODULE_4__["Vector3"]();
         var tooFar = monkeyCar.position.z >= TILE_LENGTH;
         var endingGame = tooFar || numBananas >= GOAL_BANANAS;
-        if (endingGame) {
-            carSpeed -= 0.003 * frameDelta;
+        if (endingGame || forceStopCar) {
+            if (forceStopCar) {
+                correctAnswer.textContent = forceMathObj.firstNumber + " " + forceMathObj.symbol + " " + forceMathObj.secondNumber + " = ?";
+                correctAnswer.style.display = "";
+            }
+            carSpeed -= (forceStopCar ? 0.006 : 0.003) * frameDelta;
             carSpeed = Math.max(0, carSpeed);
             if (carSpeed <= 0) {
-                if (tooFar)
-                    showFailureDialog("distance");
-                else if (numBananas >= GOAL_BANANAS)
-                    showWinDialog();
+                if (forceStopCar) {
+                    forceStopCar = false;
+                    setTimeout(function () {
+                        correctAnswer.textContent = forceMathObj.firstNumber + " " + forceMathObj.symbol + " " + forceMathObj.secondNumber + " = " + forceMathObj.result + ", not " + totalNumber;
+                        setTimeout(function () {
+                            correctAnswer.style.display = "none";
+                            forceMathObj = null;
+                        }, 3000);
+                    }, 2000);
+                }
+                else {
+                    if (tooFar)
+                        showFailureDialog("distance");
+                    else if (numBananas >= GOAL_BANANAS)
+                        showWinDialog();
+                }
             }
         }
-        else {
+        else if (forceMathObj == null) {
             if (keys.ArrowUp || keys.Up) {
                 carSpeed += 0.001 * frameDelta;
                 carSpeed = Math.min(0.8, carSpeed);
@@ -6561,8 +6582,8 @@ var createScene = function () {
                 carSpeed = Math.max(0.03, carSpeed);
             }
         }
-        engineSound.setPlaybackRate(1 + (carSpeed / 0.17));
-        if (!endingGame) {
+        engineSound.setPlaybackRate((!forceStopCar && forceMathObj != null) ? 0 : (1 + (carSpeed / 0.17)));
+        if (!endingGame && forceMathObj == null && !forceStopCar) {
             var ray = new babylonjs__WEBPACK_IMPORTED_MODULE_4__["Ray"](monkeyCar.position.add(new babylonjs__WEBPACK_IMPORTED_MODULE_4__["Vector3"](0, 0.5, 0)), new babylonjs__WEBPACK_IMPORTED_MODULE_4__["Vector3"](0, 0, 1), 4);
             var hit = scene.pickWithRay(ray, null, true);
             if (hit.pickedMesh != null) {
@@ -6586,6 +6607,8 @@ var createScene = function () {
                         wrongSound.play();
                         numBananas = Math.max(0, numBananas - factor);
                         rattling = 33;
+                        forceMathObj = barrel.mathObj;
+                        forceStopCar = true;
                     }
                     /*
                     var bananas = document.querySelector("#bananas");
@@ -6628,9 +6651,9 @@ var createScene = function () {
 /******* End of the create scene function ******/
 initGame();
 window.onstartdialogdone = function (e) {
-    return Object(tslib__WEBPACK_IMPORTED_MODULE_0__[/* __awaiter */ "a"])(this, void 0, void 0, function () {
+    return Object(tslib__WEBPACK_IMPORTED_MODULE_0__[/* __awaiter */ "b"])(this, void 0, void 0, function () {
         var scene;
-        return Object(tslib__WEBPACK_IMPORTED_MODULE_0__[/* __generator */ "b"])(this, function (_a) {
+        return Object(tslib__WEBPACK_IMPORTED_MODULE_0__[/* __generator */ "c"])(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     e.currentTarget.outerHTML = "Starting game...";

@@ -140,3 +140,25 @@ html, body, #game-container {
     pointer-events: none;
     font-weight: bold;
 }
+
+@keyframes correct-answer-anim {
+    0%, 100% {
+        transform: translateX(-50%) scale(1);
+    }
+    50% {
+        transform: translateX(-50%) scale(1.25);
+    }
+}
+
+.correct-answer {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    transform-origin: top center;
+    color: red;
+    margin-top: 3rem;
+    font-size: 2rem;
+    animation: correct-answer-anim 0.5s linear;
+    animation-iteration-count: infinite;
+}
