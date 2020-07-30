@@ -674,6 +674,7 @@ function onButtonClick(button) {
                     console.log("FIRST RENDER");
                     (document.querySelector("#start-dialog") as HTMLElement).style.display = "none";
                     (document.querySelector("#change-number") as HTMLElement).style.display = "";
+                    (document.querySelector(".add-to") as HTMLElement).style.display = "";
                     firstRender = false;
                 }
                 if(!endDialogVisible)
