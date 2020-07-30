@@ -162,3 +162,16 @@ html, body, #game-container {
     animation: correct-answer-anim 0.5s linear;
     animation-iteration-count: infinite;
 }
+
+.target-number {
+    width: 13em;
+    margin-bottom: 1rem;
+}
+
+#change-number {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 1rem;
+}

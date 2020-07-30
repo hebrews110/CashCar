@@ -99,13 +99,7 @@ const operationSymbol = { add: "+", subtract: "-", multiply: "*", divide: "/"};
 var initGame = function () {
     var bananaGoal = parseInt(getParameterByName("bananaGoal"));
     var timeToPlay = parseInt(getParameterByName("timeToPlay"));
-    totalNumber = parseInt(getParameterByName("number"));
 
-    operation = getParameterByName("operation");
-    if(isNaN(totalNumber)) {
-        window.alert("?number must be an integer.");
-        return;
-    }
     Array.from(document.querySelectorAll(".number-to-add")).forEach(e => e.textContent = totalNumber.toString());
     Array.from(document.querySelectorAll(".operation-name")).forEach(e => e.textContent = operation.toUpperCase());
     if(!isNaN(bananaGoal))
@@ -115,12 +109,79 @@ var initGame = function () {
         gameTotalTime = timeToPlay;
 
     Array.from(document.querySelectorAll(".num-bananas")).forEach(e => e.textContent = GOAL_BANANAS.toString());
-    var button = document.getElementById("start-button");
-    button.removeAttribute("disabled");
-    button.textContent = "Start game";
-    (document.querySelector("#start-dialog .dialog-image-left") as HTMLElement).style.display = "";
     TILE_LENGTH = Math.ceil(10000 * (GOAL_BANANAS / 100));
 }
+
+/**
+ * Add or update a query string parameter. If no URI is given, we use the current
+ * window.location.href value for the URI.
+ * 
+ * Based on the DOM URL parser described here:
+ * http://james.padolsey.com/javascript/parsing-urls-with-the-dom/
+ *
+ * @param   (string)    uri     Optional: The URI to add or update a parameter in
+ * @param   (string)    key     The key to add or update
+ * @param   (string)    value   The new value to set for key
+ *
+ * Tested on Chrome 34, Firefox 29, IE 7 and 11
+ */
+function update_query_string(uri: string|undefined, key: string, value: string): string {
+	// Use window URL if no query string is provided
+	if ( ! uri ) { uri = window.location.href; }
+
+	// Create a dummy element to parse the URI with
+	var a = document.createElement( 'a' ), 
+
+		// match the key, optional square brackets, an equals sign or end of string, the optional value
+		reg_ex = new RegExp( key + '((?:\\[[^\\]]*\\])?)(=|$)(.*)' ),
+
+		// Setup some additional variables
+		qs,
+		qs_len,
+		key_found = false;
+
+	// Use the JS API to parse the URI 
+	a.href = uri;
+
+	// If the URI doesn't have a query string, add it and return
+	if ( ! a.search ) {
+
+		a.search = '?' + key + '=' + value;
+
+		return a.href;
+	}
+
+	// Split the query string by ampersands
+	qs = a.search.replace( /^\?/, '' ).split( /&(?:amp;)?/ );
+	qs_len = qs.length; 
+
+	// Loop through each query string part
+	while ( qs_len > 0 ) {
+
+		qs_len--;
+
+		// Remove empty elements to prevent double ampersands
+		if ( ! qs[qs_len] ) { qs.splice(qs_len, 1); continue; }
+
+		// Check if the current part matches our key
+		if ( reg_ex.test( qs[qs_len] ) ) {
+
+			// Replace the current value
+			qs[qs_len] = qs[qs_len].replace( reg_ex, key + '$1' ) + '=' + value;
+
+			key_found = true;
+		}
+	}   
+
+	// If we haven't replaced any occurrences above, add the new parameter and value
+	if ( ! key_found ) { qs.push( key + '=' + value ); }
+
+	// Set the new query string
+	a.search = '?' + qs.join( '&' );
+
+	return a.href;
+}
+
 var createScene = function() {
     function factors(number) {
         return Array.from(Array(number + 1), function(_, i) { return i }).filter(function(i) { return number % i === 0 });
@@ -559,43 +620,57 @@ var createScene = function() {
     return scene;
 };
 /******* End of the create scene function ******/
-initGame();
 
-(window as any).onstartdialogdone = async function(e) {
-    e.currentTarget.outerHTML = "Starting game...";
-    if(document.documentElement.requestFullscreen)
-        await document.documentElement.requestFullscreen({ navigationUI: "hide" });
-    var scene = createScene(); //Call the createScene function
-    Promise.all(scenePromises).then(() => {
-        engine.resize();
-        
-        gameStart = Date.now();
-        var timer = document.querySelector(".timer");
-        var interval = setInterval(() => {
-            if(endDialogVisible) {
-                clearInterval(interval);
-                return;
-            }
-            var remaining = Math.max(0, Math.round(gameTotalTime - ((Date.now()-gameStart) / 1000)));
-            timer.textContent = "Time remaining: " + remaining + " seconds";
-        }, 1000);
-        var firstRender = true;
-        // Register a render loop to repeatedly render the scene
-        engine.runRenderLoop(function () {
-            if(firstRender) {
-                console.log("FIRST RENDER");
-                (document.querySelector("#start-dialog") as HTMLElement).style.display = "none";
-                firstRender = false;
-            }
-            if(!endDialogVisible)
-                scene.render();
-        });
+(document.querySelector("#start-dialog .dialog-image-left") as HTMLElement).style.display = "";
 
-        // Watch for browser/canvas resize events
-        window.addEventListener("resize", function () {
+document.querySelectorAll(".start-buttons button").forEach(button => button.addEventListener("click", function() {
+    totalNumber = parseInt((document.querySelector(".target-number") as HTMLInputElement).value);
+    if(isNaN(totalNumber) || totalNumber <= 1) {
+        window.alert("Please enter a valid number (greater than one).");
+        return;
+    }
+    operation = button.textContent.toLowerCase();
+    if(operation == "subtract" && totalNumber > 9) {
+        window.alert("The maximum number you can choose for subtraction is 9.");
+        return;
+    }
+    // + "&operation=add";
+    (async function() {
+        document.querySelector(".start-buttons").outerHTML = "Starting game...";
+        initGame();
+        if(document.documentElement.requestFullscreen)
+            await document.documentElement.requestFullscreen({ navigationUI: "hide" });
+        var scene = createScene(); //Call the createScene function
+        Promise.all(scenePromises).then(() => {
             engine.resize();
+            
+            gameStart = Date.now();
+            var timer = document.querySelector(".timer");
+            var interval = setInterval(() => {
+                if(endDialogVisible) {
+                    clearInterval(interval);
+                    return;
+                }
+                var remaining = Math.max(0, Math.round(gameTotalTime - ((Date.now()-gameStart) / 1000)));
+                timer.textContent = "Time remaining: " + remaining + " seconds";
+            }, 1000);
+            var firstRender = true;
+            // Register a render loop to repeatedly render the scene
+            engine.runRenderLoop(function () {
+                if(firstRender) {
+                    console.log("FIRST RENDER");
+                    (document.querySelector("#start-dialog") as HTMLElement).style.display = "none";
+                    (document.querySelector("#change-number") as HTMLElement).style.display = "";
+                    firstRender = false;
+                }
+                if(!endDialogVisible)
+                    scene.render();
+            });
+
+            // Watch for browser/canvas resize events
+            window.addEventListener("resize", function () {
+                engine.resize();
+            });
         });
-    });
-    
-    
-}
+    })();
+}));
