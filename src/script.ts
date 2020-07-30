@@ -202,11 +202,11 @@ var createScene = function() {
         
         if(operation == "add") {
             symbol = "&plus;";
-            firstFactor = getRandomIntInclusive(1, currentCorrectAnswer);
+            firstFactor = getRandomIntInclusive(1, currentCorrectAnswer - 1);
             secondFactor = currentCorrectAnswer - firstFactor;
         } else if(operation == "subtract") {
             symbol = "&minus;";
-            firstFactor = getRandomIntInclusive(currentCorrectAnswer + 1, currentCorrectAnswer + 10);
+            firstFactor = getRandomIntInclusive(currentCorrectAnswer + 1, currentCorrectAnswer + 9);
             secondFactor = firstFactor - currentCorrectAnswer;
         } else if(operation == "multiply") {
             symbol = "&times;";
@@ -623,20 +623,30 @@ var createScene = function() {
 
 (document.querySelector("#start-dialog .dialog-image-left") as HTMLElement).style.display = "";
 
-document.querySelectorAll(".start-buttons button").forEach(button => button.addEventListener("click", function() {
-    totalNumber = parseInt((document.querySelector(".target-number") as HTMLInputElement).value);
+function onButtonClick(button) {
+    totalNumber = parseInt(getParameterByName("number"));
+    if(isNaN(totalNumber))
+        totalNumber = parseInt((document.querySelector(".target-number") as HTMLInputElement).value);
     if(isNaN(totalNumber) || totalNumber <= 1) {
         window.alert("Please enter a valid number (greater than one).");
         return;
     }
-    operation = button.textContent.toLowerCase();
+    operation = getParameterByName("operation");
+    if(operation == null)
+        operation = button.textContent.toLowerCase();
     if(operation == "subtract" && totalNumber > 9) {
         window.alert("The maximum number you can choose for subtraction is 9.");
+        return;
+    } else if(operation == "add" && totalNumber > 18) {
+        window.alert("The maximum number you can choose for addition is 18.");
         return;
     }
     // + "&operation=add";
     (async function() {
-        document.querySelector(".start-buttons").outerHTML = "Starting game...";
+        (document.querySelector("#start-with-preloaded") as HTMLElement).style.display = "none";
+        var startButtons = document.querySelector(".start-buttons") as HTMLElement;
+        startButtons.innerHTML = "Starting game...";
+        startButtons.style.display = "";
         initGame();
         if(document.documentElement.requestFullscreen)
             await document.documentElement.requestFullscreen({ navigationUI: "hide" });
@@ -653,6 +663,9 @@ document.querySelectorAll(".start-buttons button").forEach(button => button.addE
                 }
                 var remaining = Math.max(0, Math.round(gameTotalTime - ((Date.now()-gameStart) / 1000)));
                 timer.textContent = "Time remaining: " + remaining + " seconds";
+                if(remaining <= 0) {
+                    showFailureDialog("time");
+                }
             }, 1000);
             var firstRender = true;
             // Register a render loop to repeatedly render the scene
@@ -673,4 +686,15 @@ document.querySelectorAll(".start-buttons button").forEach(button => button.addE
             });
         });
     })();
+}
+
+if(getParameterByName("operation") != null && getParameterByName("number") != null) {
+    (document.querySelector(".start-buttons") as HTMLElement).style.display = "none";
+    var preloaded = (document.querySelector("#start-with-preloaded") as HTMLElement);
+    preloaded.style.display = "";
+    preloaded.querySelector("button").addEventListener("click", () => onButtonClick(null));
+    (document.querySelector("#target-number-container") as HTMLElement).style.display = "none";
+}
+document.querySelectorAll(".start-buttons button").forEach(button => button.addEventListener("click", function() {
+    onButtonClick(button);
 }));
