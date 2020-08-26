@@ -7,8 +7,11 @@ import * as GUI from 'babylonjs-gui';
 import Hammer from 'hammerjs';
 
 var canvas = document.getElementById("renderCanvas") as HTMLCanvasElement; // Get the canvas element
-var engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
-
+var engine = new BABYLON.Engine(canvas, true, {
+    disableWebGL2Support: true
+}); // Generate the BABYLON 3D engine
+engine.disableUniformBuffers = true;
+engine.disableVertexArrayObjects = true;
 let monkeyCar: BABYLON.AbstractMesh = null;
 let camera: BABYLON.ArcFollowCamera;
 
@@ -290,7 +293,8 @@ var createScene = function() {
             monkeyCar = meshes[0];
             engineSound = new BABYLON.Sound("engine", "sounds/engineSound.wav", scene, null, {
                 loop: true,
-                autoplay: true
+                autoplay: true,
+                volume: 0.7
             });
             engineSound.attachToMesh(monkeyCar);
             monkeyCar.rotate(BABYLON.Axis.Y, Math.PI / 2, BABYLON.Space.LOCAL);
@@ -622,6 +626,15 @@ var createScene = function() {
 /******* End of the create scene function ******/
 
 (document.querySelector("#start-dialog .dialog-image-left") as HTMLElement).style.display = "";
+
+var isMuted = false;
+(window as any).toggleMuting = function(e) {
+    if(typeof BABYLON.Engine.audioEngine.masterGain == 'undefined')
+        return;
+    isMuted = !isMuted;
+    e.currentTarget.textContent = isMuted ? "Unmute" : "Mute";
+    BABYLON.Engine.audioEngine.masterGain.gain.value = isMuted ? 0 : 1;
+};
 
 function onButtonClick(button) {
     totalNumber = parseInt(getParameterByName("number"));

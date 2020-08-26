@@ -175,3 +175,8 @@ html, body, #game-container {
     transform: translateX(-50%);
     margin-bottom: 1rem;
 }
+
+#mute-button {
+    margin-top: 4px;
+    pointer-events: auto;
+}
