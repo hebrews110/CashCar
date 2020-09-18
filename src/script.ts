@@ -7,11 +7,8 @@ import * as GUI from 'babylonjs-gui';
 import Hammer from 'hammerjs';
 
 var canvas = document.getElementById("renderCanvas") as HTMLCanvasElement; // Get the canvas element
-var engine = new BABYLON.Engine(canvas, true, {
-    disableWebGL2Support: true
-}); // Generate the BABYLON 3D engine
-engine.disableUniformBuffers = true;
-engine.disableVertexArrayObjects = true;
+var engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
+
 let monkeyCar: BABYLON.AbstractMesh = null;
 let camera: BABYLON.ArcFollowCamera;
 
@@ -266,7 +263,9 @@ var createScene = function() {
     var grassMaterial = new BABYLON.StandardMaterial("grassMaterial", scene);
     
     let roadTexture = new BABYLON.Texture("./road.jpg", scene);
+
     roadMaterial.diffuseTexture = roadTexture;
+    roadMaterial.zOffset = -5.0;
     roadTexture.vScale = 3.0;
     roadTexture.uScale = TILE_LENGTH;
     roadTexture.vOffset = 0.5;
@@ -288,7 +287,7 @@ var createScene = function() {
     roadMaterial.freeze();
     grassMaterial.freeze();
 
-    scenePromises.push(new Promise(resolve => {
+    scenePromises.push(new Promise<void>(resolve => {
         BABYLON.SceneLoader.ImportMesh(null, "./", "Crysler_new_yorker.glb", scene, function (meshes) {
             monkeyCar = meshes[0];
             engineSound = new BABYLON.Sound("engine", "sounds/engineSound.wav", scene, null, {
@@ -341,7 +340,7 @@ var createScene = function() {
     scene.autoClear = false; // Color buffer
     scene.autoClearDepthAndStencil = false; // Depth and stencil, obviously
 
-    scenePromises.push(new Promise(resolve => {
+    scenePromises.push(new Promise<void>(resolve => {
         BABYLON.SceneLoader.ImportMesh(null, "./", "barrel.glb", scene, function (meshes) {
             meshes.forEach(mesh => {
                 mesh.renderingGroupId = 1;
