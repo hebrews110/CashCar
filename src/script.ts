@@ -263,7 +263,9 @@ var createScene = function() {
     var grassMaterial = new BABYLON.StandardMaterial("grassMaterial", scene);
     
     let roadTexture = new BABYLON.Texture("./road.jpg", scene);
+
     roadMaterial.diffuseTexture = roadTexture;
+    roadMaterial.zOffset = -5.0;
     roadTexture.vScale = 3.0;
     roadTexture.uScale = TILE_LENGTH;
     roadTexture.vOffset = 0.5;
@@ -285,12 +287,13 @@ var createScene = function() {
     roadMaterial.freeze();
     grassMaterial.freeze();
 
-    scenePromises.push(new Promise(resolve => {
+    scenePromises.push(new Promise<void>(resolve => {
         BABYLON.SceneLoader.ImportMesh(null, "./", "Crysler_new_yorker.glb", scene, function (meshes) {
             monkeyCar = meshes[0];
             engineSound = new BABYLON.Sound("engine", "sounds/engineSound.wav", scene, null, {
                 loop: true,
-                autoplay: true
+                autoplay: true,
+                volume: 0.7
             });
             engineSound.attachToMesh(monkeyCar);
             monkeyCar.rotate(BABYLON.Axis.Y, Math.PI / 2, BABYLON.Space.LOCAL);
@@ -337,7 +340,7 @@ var createScene = function() {
     scene.autoClear = false; // Color buffer
     scene.autoClearDepthAndStencil = false; // Depth and stencil, obviously
 
-    scenePromises.push(new Promise(resolve => {
+    scenePromises.push(new Promise<void>(resolve => {
         BABYLON.SceneLoader.ImportMesh(null, "./", "barrel.glb", scene, function (meshes) {
             meshes.forEach(mesh => {
                 mesh.renderingGroupId = 1;
@@ -622,6 +625,15 @@ var createScene = function() {
 /******* End of the create scene function ******/
 
 (document.querySelector("#start-dialog .dialog-image-left") as HTMLElement).style.display = "";
+
+var isMuted = false;
+(window as any).toggleMuting = function(e) {
+    if(typeof BABYLON.Engine.audioEngine.masterGain == 'undefined')
+        return;
+    isMuted = !isMuted;
+    e.currentTarget.textContent = isMuted ? "Unmute" : "Mute";
+    BABYLON.Engine.audioEngine.masterGain.gain.value = isMuted ? 0 : 1;
+};
 
 function onButtonClick(button) {
     totalNumber = parseInt(getParameterByName("number"));
